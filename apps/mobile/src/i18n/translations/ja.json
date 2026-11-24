@@ -5593,5 +5593,6 @@
   "892f08d21b8e48a9": "要件が満たされたら、{layers} を{kind, select, squash {スカッシュ} merge {マージ} rebase {リベース} fastForward {早送り} other {{method}}}で {base} にマージします。すぐにマージされる場合があります。",
   "89bf40eb2503b6c5": "{environment} に新しいデバイスがサインインしました",
   "c94b5fe9ef372bc0": "{device} が {product} 経由で接続しました。心当たりがない場合は、そのコンピューターの T3 Code で 設定 → アクセス から削除してください。",
-  "bec67d0ed485f885": "{count, plural, other {{count} 台のデバイス}}が {product} 経由で接続しました。心当たりがない場合は、そのコンピューターの T3 Code で 設定 → アクセス から削除してください。"
+  "bec67d0ed485f885": "{count, plural, other {{count} 台のデバイス}}が {product} 経由で接続しました。心当たりがない場合は、そのコンピューターの T3 Code で 設定 → アクセス から削除してください。",
+  "e0856d6a402ad821": "{organization} のポリシーでは、プロジェクトのワークツリーレイアウトコマンドは許可されていません。"
 }

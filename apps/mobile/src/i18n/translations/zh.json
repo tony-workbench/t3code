@@ -5603,5 +5603,6 @@
   "892f08d21b8e48a9": "满足要求时使用{kind, select, squash {压缩合并} merge {合并} rebase {变基} fastForward {快进} other {{method}}}方式将 {layers} 合并到 {base}。这可能会立即发生。",
   "89bf40eb2503b6c5": "有新设备登录了 {environment}",
   "c94b5fe9ef372bc0": "{device} 已通过 {product} 连接。如果不是你本人，请在那台电脑的 T3 Code 中前往 设置 → 访问权限 将其移除。",
-  "bec67d0ed485f885": "{count, plural, other {{count} 台设备}}已通过 {product} 连接。如果不是你本人，请在那台电脑的 T3 Code 中前往 设置 → 访问权限 将其移除。"
+  "bec67d0ed485f885": "{count, plural, other {{count} 台设备}}已通过 {product} 连接。如果不是你本人，请在那台电脑的 T3 Code 中前往 设置 → 访问权限 将其移除。",
+  "e0856d6a402ad821": "{organization} 的策略不允许使用项目的工作树布局命令。"
 }

@@ -5613,5 +5613,6 @@
   "892f08d21b8e48a9": "Fusionar {layers} en {base} con {kind, select, squash {squash} merge {merge} rebase {rebase} fastForward {fast-forward} other {{method}}} cuando se cumplan sus requisitos. Puede ocurrir de inmediato.",
   "89bf40eb2503b6c5": "Nuevo dispositivo conectado a {environment}",
   "c94b5fe9ef372bc0": "{device} se conectó a través de {product}. Si no fuiste tú, quítalo en Ajustes → Acceso en T3 Code en ese ordenador.",
-  "bec67d0ed485f885": "{count, plural, one {{count} dispositivo se conectó} other {{count} dispositivos se conectaron}} a través de {product}. Si no fuiste tú, quítalos en Ajustes → Acceso en T3 Code en ese ordenador."
+  "bec67d0ed485f885": "{count, plural, one {{count} dispositivo se conectó} other {{count} dispositivos se conectaron}} a través de {product}. Si no fuiste tú, quítalos en Ajustes → Acceso en T3 Code en ese ordenador.",
+  "e0856d6a402ad821": "La política de {organization} no permite comandos de diseño de worktrees de proyectos."
 }

@@ -134,6 +134,8 @@ type PreparationInput = Pick<
   "commandId" | "projectId" | "workspaceStrategy" | "initialMessage" | "linkOrigin"
 > & {
   readonly reusedWorktree?: { readonly baseRef: string };
+  /** Set when an agent asked for this run, with the thread it asked from if it has one. */
+  readonly askedByAgent?: { readonly threadId: ThreadId | undefined };
 };
 
 export interface ThreadLaunchPreparationInput {
@@ -314,6 +316,34 @@ const make = Effect.gen(function* () {
         ...(threadId === undefined ? {} : { threadId }),
         cause,
       });
+
+  // The administrator's limit, fixed for the server's life as it is where turns start.
+  const maxRuntimeMode = serverSettings.managedPolicy?.limits?.maxRuntimeMode;
+  /**
+   * Whether the project's own code may run for this preparation. An agent has it run only from a
+   * thread in Full access: the thread it asked from, or the one being prepared when it named
+   * none, whose modes whoever asked could not set above their own. Asked again before each piece
+   * of the project's code, since fetching and checking out in between can take minutes.
+   */
+  const projectCommandsFor = Effect.fn("ThreadLaunchService.projectCommandsFor")(function* (
+    input: PreparationInput,
+    threadId: ThreadId,
+  ) {
+    if (input.askedByAgent === undefined)
+      return TaskFolders.projectCommandsForLink(input.linkOrigin);
+    const live = (id: ThreadId) =>
+      threads.getThreadShell(id).pipe(
+        Effect.map((shell) => (shell === null || shell.deletedAt !== null ? null : shell)),
+        Effect.orElseSucceed(() => null),
+      );
+    const asker = yield* live(input.askedByAgent.threadId ?? threadId);
+    // A thread that cannot be read might be below Full access, the one that asked included.
+    return TaskFolders.projectCommandsForAgent(
+      input.linkOrigin,
+      asker ?? { runtimeMode: "approval-required", interactionMode: "default" },
+      maxRuntimeMode,
+    );
+  });
 
   const recordBranchRenameFailure = Effect.fn("ThreadLaunchService.recordBranchRenameFailure")(
     function* (threadId: ThreadId, runId: RunId, branch: string, cause: Cause.Cause<unknown>) {
@@ -589,6 +619,7 @@ const make = Effect.gen(function* () {
         fiber: yield* Effect.fiber,
       });
     }
+    const projectCommandsNow = projectCommandsFor(input, threadId);
     yield* Effect.gen(function* () {
       const initialMessage = input.initialMessage;
       const generateBranchNameFor = Effect.fn("ThreadLaunchService.generateBranchNameFor")(
@@ -853,7 +884,7 @@ const make = Effect.gen(function* () {
                   projectStart: { refName: startRef, baseRefName },
                   baseBranch: input.workspaceStrategy.baseRef,
                   startFromOrigin: input.workspaceStrategy.startFromOrigin === true,
-                  projectCommands: TaskFolders.linkRunsProjectCommands(input.linkOrigin),
+                  projectCommands: projectCommandsNow,
                   projectProgress: progress,
                   onClaimed: (taskFolder, claimedBranch) =>
                     Effect.sync(() => {
@@ -1030,8 +1061,9 @@ const make = Effect.gen(function* () {
           .pipe(Effect.mapError(mapError(input, "update-thread", threadId)));
       }
       yield* setupTracker.stageStatus(threadId, "setup-script", "running");
+      // The saved setup script is the project's code too.
       const setup =
-        worktreePath === null
+        worktreePath === null || (yield* projectCommandsNow) === "agent-below-full-access"
           ? ({ status: "no-script" } as const)
           : yield* setupScripts
               .runForThread({
@@ -1178,7 +1210,7 @@ const make = Effect.gen(function* () {
                       root: removedTaskFolder,
                       force: true,
                       forget: true,
-                      projectCommands: TaskFolders.linkRunsProjectCommands(input.linkOrigin),
+                      projectCommands: projectCommandsNow,
                       deleteBranch: removedBranch ?? undefined,
                     })
                     .pipe(
@@ -1617,6 +1649,9 @@ const make = Effect.gen(function* () {
             yield* schedulePreparation(
               {
                 ...preparation,
+                ...(input.createdBy === "agent"
+                  ? { askedByAgent: { threadId: input.initialMessage?.senderThreadId } }
+                  : {}),
                 workspaceStrategy: preparationStrategy,
                 ...(committedThread.linkOrigin === undefined
                   ? {}
@@ -1717,6 +1752,10 @@ const make = Effect.gen(function* () {
         projectId: thread.projectId,
         workspaceStrategy: reuse?.strategy ?? workspacePreparation,
         ...(thread.linkOrigin === undefined ? {} : { linkOrigin: thread.linkOrigin }),
+        // Who sent the run's message asked for it; a retry asks for the same run again.
+        ...((message?.createdBy ?? thread.createdBy) === "agent"
+          ? { askedByAgent: { threadId: message?.senderThreadId } }
+          : {}),
         ...(reuse === null ? {} : { reusedWorktree: reuse.reusedWorktree }),
         ...(message === undefined
           ? {}
