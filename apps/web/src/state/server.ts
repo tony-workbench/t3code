@@ -88,7 +88,8 @@ export const primaryRelayTracingAllowedAtom = Atom.make((get): boolean | null =>
   const environmentId = get(primaryEnvironmentIdAtom);
   const config =
     environmentId === null ? null : get(environmentSession.initialConfigValueAtom(environmentId));
-  return config === null ? null : config.observability.relayTracingAllowed !== false;
+  // Fork: tracing only when the server explicitly allows it.
+  return config === null ? null : config.observability.relayTracingAllowed === true;
 }).pipe(Atom.withLabel("web-primary-relay-tracing-allowed"));
 
 export const primaryServerConfigEventAtom = Atom.make(

@@ -1,5 +1,11 @@
 # Product usage data
 
+> **This fork sends nothing by default.** Product usage events, relay tracing (server, desktop,
+> and web), mobile traces, and mobile crash reports are all off unless you opt in. The server has
+> no built-in ingest host or project key, so `T3CODE_TELEMETRY_ENABLED=true` alone still sends
+> nothing: you must also set `T3CODE_POSTHOG_HOST` and `T3CODE_POSTHOG_KEY` to a receiver you run.
+> The text below describes the upstream T3 Code defaults.
+
 The T3 Code server sends product usage events to T3 Code's own endpoint at `ingest.t3.codes`,
 associated with a hashed random identifier for the installation. To count how many installations one person
 uses, the server also sends a hashed identifier for your T3 Connect account when you are signed in

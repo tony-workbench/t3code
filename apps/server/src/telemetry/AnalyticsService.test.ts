@@ -416,6 +416,52 @@ it.layer(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))("AnalyticsService
     }),
   );
 
+  const requestsWithConfig = (config: Record<string, unknown>) =>
+    Effect.gen(function* () {
+      const urls: Array<string> = [];
+      const client = HttpClient.make((request) =>
+        Effect.sync(() => urls.push(request.url)).pipe(
+          Effect.andThen(respondWithStatus(204)(request)),
+        ),
+      );
+      const runtimeLayer = AnalyticsService.layer.pipe(
+        Layer.provideMerge(
+          ServerConfig.ServerConfig.layerTest(process.cwd(), { prefix: "t3-telemetry-fork-" }),
+        ),
+        Layer.provide(ConfigProvider.layer(ConfigProvider.fromUnknown(config))),
+        Layer.provide(
+          Layer.mergeAll(
+            Layer.succeed(HostProcess.Platform, "darwin"),
+            Layer.succeed(HostProcess.Architecture, "arm64"),
+            Layer.succeed(HttpClient.HttpClient, client),
+            ManagedPolicy.layerTest(),
+          ),
+        ),
+      );
+      yield* Effect.gen(function* () {
+        const analytics = yield* AnalyticsService.AnalyticsService;
+        yield* analytics.record("test.fork-default", { index: 1 });
+        yield* analytics.flush;
+      }).pipe(Effect.provide(runtimeLayer));
+      return urls;
+    });
+
+  it.effect("sends nothing with the fork's default configuration", () =>
+    Effect.gen(function* () {
+      assert.deepEqual(yield* requestsWithConfig({}), []);
+    }),
+  );
+
+  it.effect("sends nothing when enabled without an operator-chosen host and key", () =>
+    Effect.gen(function* () {
+      assert.deepEqual(yield* requestsWithConfig({ T3CODE_TELEMETRY_ENABLED: true }), []);
+      assert.deepEqual(
+        yield* requestsWithConfig({ T3CODE_TELEMETRY_ENABLED: true, T3CODE_POSTHOG_KEY: "phc_x" }),
+        [],
+      );
+    }),
+  );
+
   it.effect("does not send batch requests when telemetry is disabled", () =>
     Effect.gen(function* () {
       const capturedPaths: Array<string> = [];
